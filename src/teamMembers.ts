@@ -107,7 +107,6 @@ You are the ${this.name}.
   async handleCodeBlocks(completion: string): Promise<string | null> {
     const codeBlocks = extractCode(completion);
     if (codeBlocks.length > 0 && this.codeExecutionConfig.enabled) {
-      console.log(codeBlocks);
       return await executeCodeBlocks(codeBlocks, this.codeExecutionConfig);
     } else {
       return null;

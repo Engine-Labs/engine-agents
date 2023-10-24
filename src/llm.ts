@@ -31,9 +31,6 @@ export async function getCompletion(
     ...mapMessages(requester, messages),
   ];
 
-  console.log(requester);
-  console.log(formattedMessages);
-
   const completion = await openai.chat.completions.create({
     messages: formattedMessages,
     model: "gpt-4-0613",
@@ -41,8 +38,6 @@ export async function getCompletion(
   });
 
   const response = completion["choices"][0]["message"];
-
-  console.log(response);
 
   if (response.function_call) {
     try {

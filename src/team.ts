@@ -11,7 +11,7 @@ export class Team {
   leader: TeamLeader;
   members: TeamMember[];
 
-  constructor(leader: TeamLeader, members: TeamMember[]) {
+  constructor(leader: TeamLeader, members: TeamMember[] = []) {
     this.leader = leader;
     this.members = members;
     this.initializeTeam();

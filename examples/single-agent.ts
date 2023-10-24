@@ -28,7 +28,7 @@ Only use the functions that you have access to.`,
     }
   );
 
-  const team = new Team(softwareEngineer, []);
+  const team = new Team(softwareEngineer);
 
   const chat = await team.chat(
     "Compare the year-to-date gain for META and TESLA."
