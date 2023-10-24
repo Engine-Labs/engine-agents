@@ -39,9 +39,6 @@ async function run() {
     "What does the @ sign in some NPM packages mean?"
   );
   console.log(chat);
-
-  const teamState = team.getState();
-  console.log(teamState);
 }
 
 run();
@@ -51,6 +48,17 @@ See the [examples directory](./examples/) for more.
 
 ## Known issues
 
+- If code execution is enabled on an agent, it will attempt to execute any code it generates on the
+  machine that it is running on - this code execution is currently **not sandboxed in any way** so
+  use at your own risk!
+
+- This library has not been tested for compatibility on machines running Windows, which should only
+  matter when code execution is enabled
+
 ## Roadmap
 
+Coming soon
+
 ## Contributing
+
+Coming soon
