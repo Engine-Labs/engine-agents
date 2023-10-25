@@ -58,19 +58,16 @@ See the [examples directory](./examples/) for more.
 
 - Code execution: single line code blocks will not be executed
 
-- The max number of messages is capped and not yet configurable from outside the library
+- The max number of messages is currently capped at 10 and not yet configurable from outside the library
 
 - The LLM used to create the completions is not yet configurable from outside the library
 
 - Errors from the OpenAI API aren't handled gracefully or retried yet
 
 - When defining function calls with FunctionConfig, note that function names must match, and
-  implementations must not be arrow functions because of how we serialize and deserialize the config
+  implementations must not be arrow functions because of how the config is serialized and deserialized
 
 - The groupchat model sometimes doesn't mesh well with returning only the responses from the TeamLeader of a Team
-
-- Code execution results look like they come from the user currently - it might be clearer if instead
-  there is an ephemeral 'Executor' character instead.
 
 ## Roadmap
 

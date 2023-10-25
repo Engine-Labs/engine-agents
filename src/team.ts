@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { HUMAN_USER_NAME } from "./constants";
+import { EXECUTOR, HUMAN_USER_NAME } from "./constants";
 import { parseWithFns } from "./parsers";
 import { TeamLeader, TeamMember } from "./teamMembers";
 import { MemberResponse, Message, TeamState } from "./types";
@@ -83,7 +83,7 @@ export class Team {
           memberResponse.response
         );
         if (codeBlocksResults) {
-          this.broadcastMessage(HUMAN_USER_NAME, codeBlocksResults);
+          this.broadcastMessage(EXECUTOR, codeBlocksResults);
           memberResponse = await teamMember.getResponse();
           continue;
         }
@@ -110,9 +110,7 @@ export class Team {
   }
 
   private broadcastMessage(senderName: string, message: string): void {
-    [this.leader, ...this.members].forEach((member) =>
-      member.addMessage(senderName, message)
-    );
+    this.everyone.forEach((member) => member.addMessage(senderName, message));
 
     this.stateHandler(this.getState());
   }
