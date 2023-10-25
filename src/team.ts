@@ -31,9 +31,9 @@ export class Team {
     this.everyone.forEach((member) => member.setTeam(this));
     this.everyone.forEach((member) => {
       member.addFunctionConfig({
-        schemas: [this.getPassControlSchema()],
-        functions: {
-          pass_control: function () {}, // special case used to pass control to another team member
+        pass_control: {
+          schema: this.getPassControlSchema(),
+          function: function () {},
         },
       });
     });

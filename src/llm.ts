@@ -30,7 +30,7 @@ export async function getCompletion(
     const { choices } = await openai.chat.completions.create({
       messages: formattedMessages,
       model: "gpt-4-0613",
-      functions: functionConfig.schemas,
+      functions: Object.values(functionConfig).map((config) => config.schema),
     });
 
     const { message } = choices[0];
@@ -46,13 +46,11 @@ export async function getCompletion(
     }
 
     return content;
-
   } catch (error) {
     console.error(error);
     throw error;
   }
 }
-
 
 function formatJsonStr(jstr: string): string {
   /* Remove newlines outside of quotes, and handle JSON escape sequences.

@@ -34,10 +34,7 @@ export class TeamMember {
     this.systemPrompt = systemPrompt;
     this.originalSystemPrompt = systemPrompt;
     this.codeExecutionConfig = codeExecutionConfig;
-    this.functionConfig = functionConfig || {
-      schemas: [],
-      functions: {},
-    };
+    this.functionConfig = functionConfig || {};
   }
 
   addMessage(sender: string, message: string) {
@@ -46,11 +43,8 @@ export class TeamMember {
 
   addFunctionConfig(functionConfig: FunctionConfig) {
     this.functionConfig = {
-      schemas: this.functionConfig.schemas.concat(functionConfig.schemas),
-      functions: {
-        ...this.functionConfig.functions,
-        ...functionConfig.functions,
-      },
+      ...this.functionConfig,
+      ...functionConfig,
     };
   }
 
@@ -110,7 +104,7 @@ You are the ${this.name}.
       };
     }
 
-    if (!(name in this.functionConfig.functions)) {
+    if (!(name in this.functionConfig)) {
       return {
         nextTeamMember: null,
         responder: this.name,
@@ -118,7 +112,7 @@ You are the ${this.name}.
       };
     }
 
-    const functionResult = this.functionConfig.functions[name](args);
+    const functionResult = this.functionConfig[name].function(args);
     return {
       nextTeamMember: null,
       responder: HUMAN_USER_NAME,

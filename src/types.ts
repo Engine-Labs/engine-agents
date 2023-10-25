@@ -6,10 +6,9 @@ export interface Message {
 }
 
 export interface FunctionConfig {
-  // names must match between schemas and functions
-  schemas: OpenAI.Chat.Completions.ChatCompletionCreateParams.Function[];
-  functions: {
-    [name: string]: CallableFunction;
+  [name: string]: {
+    schema: OpenAI.Chat.Completions.ChatCompletionCreateParams.Function;
+    function: CallableFunction;
   };
 }
 
