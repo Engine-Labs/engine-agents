@@ -1,22 +1,63 @@
-import { TeamMember, TeamLeader } from "./teamMembers";
+import OpenAI from "openai";
 import { HUMAN_USER_NAME } from "./constants";
-import { MemberResponse, Message, TeamState } from "./types";
 import { parseWithFns } from "./parsers";
+import { TeamLeader, TeamMember } from "./teamMembers";
+import { MemberResponse, Message, TeamState } from "./types";
 
 const MAX_ITERATIONS = 10; // Arbitrary limit for the event loop
+
+type StateHandler = (state: TeamState) => void;
 export class Team {
   leader: TeamLeader;
   members: TeamMember[];
+  everyone: TeamMember[];
+  stateHandler: StateHandler;
 
-  constructor(leader: TeamLeader, members: TeamMember[] = []) {
+  constructor(
+    leader: TeamLeader,
+    members: TeamMember[] = [],
+    stateHandler?: StateHandler
+  ) {
     this.leader = leader;
     this.members = members;
+    this.everyone = [this.leader, ...this.members];
+
+    this.stateHandler = stateHandler || ((state) => {});
+
     this.initializeTeam();
   }
 
   initializeTeam(): void {
-    this.leader.setTeam(this);
-    this.members.forEach((member) => member.setTeam(this));
+    this.everyone.forEach((member) => member.setTeam(this));
+    this.everyone.forEach((member) => {
+      member.addFunctionConfig({
+        schemas: [this.getPassControlSchema()],
+        functions: {
+          pass_control: function () {}, // special case used to pass control to another team member
+        },
+      });
+    });
+  }
+
+  getPassControlSchema(): OpenAI.Chat.Completions.ChatCompletionCreateParams.Function {
+    return {
+      name: "pass_control",
+      description: "Pass control to a team member.",
+      parameters: {
+        type: "object",
+        required: ["teamMember"],
+        properties: {
+          teamMember: {
+            type: "string",
+            enum: [
+              HUMAN_USER_NAME,
+              ...this.everyone.map((member) => member.name),
+            ],
+            description: "The team member to pass control to.",
+          },
+        },
+      },
+    };
   }
 
   async chat(message: string): Promise<Message[]> {
@@ -72,6 +113,8 @@ export class Team {
     [this.leader, ...this.members].forEach((member) =>
       member.addMessage(senderName, message)
     );
+
+    this.stateHandler(this.getState());
   }
 
   private getMemberByName(name: string): TeamMember {

@@ -64,6 +64,14 @@ See the [examples directory](./examples/) for more.
 
 - Errors from the OpenAI API aren't handled gracefully or retried yet
 
+- When defining function calls with FunctionConfig, note that function names must match, and
+  implementations must not be arrow functions because of how we serialize and deserialize the config
+
+- The groupchat model sometimes doesn't mesh well with returning only the responses from the TeamLeader of a Team
+
+- Code execution results look like they come from the user currently - it might be clearer if instead
+  there is an ephemeral 'Executor' character instead.
+
 ## Roadmap
 
 Coming soon

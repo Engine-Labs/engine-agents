@@ -1,5 +1,5 @@
-import { HUMAN_USER_NAME } from "./constants";
 import { executeCodeBlocks, extractCode } from "./codeExecution";
+import { HUMAN_USER_NAME } from "./constants";
 import { getCompletion } from "./llm";
 import { stringifyWithFns } from "./parsers";
 import { Team } from "./team";
@@ -14,29 +14,6 @@ import {
 } from "./types";
 
 export class TeamMember {
-  private static DEFAULT_FUNCTION_CONFIG: FunctionConfig = {
-    schemas: [
-      {
-        name: "pass_control",
-        description: "Pass control to a team member.",
-        parameters: {
-          type: "object",
-          required: ["teamMember"],
-          properties: {
-            teamMember: {
-              type: "string",
-              description: "The team member to pass control to.",
-            },
-          },
-        },
-      },
-    ],
-    // NOTE: Functions must not be arrow functions because they need to be deserializable
-    functions: {
-      pass_control: function () {}, // special case used to pass control to another team member
-    },
-  };
-
   name: string;
   systemPrompt: string;
   originalSystemPrompt: string;
@@ -57,18 +34,24 @@ export class TeamMember {
     this.systemPrompt = systemPrompt;
     this.originalSystemPrompt = systemPrompt;
     this.codeExecutionConfig = codeExecutionConfig;
-    this.functionConfig = {
-      ...functionConfig,
-      ...TeamMember.DEFAULT_FUNCTION_CONFIG,
-      functions: {
-        ...functionConfig?.functions,
-        ...TeamMember.DEFAULT_FUNCTION_CONFIG.functions,
-      },
+    this.functionConfig = functionConfig || {
+      schemas: [],
+      functions: {},
     };
   }
 
   addMessage(sender: string, message: string) {
     this.messages.push({ sender: sender, content: message });
+  }
+
+  addFunctionConfig(functionConfig: FunctionConfig) {
+    this.functionConfig = {
+      schemas: this.functionConfig.schemas.concat(functionConfig.schemas),
+      functions: {
+        ...this.functionConfig.functions,
+        ...functionConfig.functions,
+      },
+    };
   }
 
   setTeam(team: Team) {

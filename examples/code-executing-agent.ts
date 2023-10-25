@@ -13,7 +13,7 @@ In the following cases, suggest Python code (in a Python coding block) or shell 
   2. When you need to perform some task with code, use the code to perform the task and output the result. Finish the task smartly.
 
 Install python packages if needed using pip3 install --quiet in a bash coding block.
-Do not use pip inside python code blocks.
+Never use !pip3 install. Never use pip inside python code blocks.
 
 Solve the task step by step if you need to. If a plan is not provided, explain your plan first. Be clear which step uses code, and which step uses your language skill.
 When using code, you must indicate the script type in the code block. The user cannot provide any other feedback or perform any other action beyond executing the code you suggest. The user can't modify your code so do not suggest incomplete code which requires user modification. Do not output a code block if it is not intended to be executed by the user.
@@ -28,7 +28,11 @@ Only use the functions that you have access to.`,
     }
   );
 
-  const team = new Team(softwareEngineer);
+  function handleStateUpdate(teamState: any) {
+    console.log(JSON.stringify(teamState));
+  }
+
+  const team = new Team(softwareEngineer, [], handleStateUpdate);
 
   const chat = await team.chat(
     "Compare the year-to-date gain for META and TESLA."
