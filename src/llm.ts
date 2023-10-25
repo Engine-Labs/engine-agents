@@ -9,12 +9,10 @@ function mapMessages(
   messages: Message[]
 ): ChatCompletionMessageParam[] {
   // Messages previously sent by the requesting member are considered 'assistant' messages
-  return messages.map((message) => {
-    return {
-      role: message.sender === requester ? "assistant" : "user",
-      content: message.content,
-    };
-  });
+  return messages.map((message) => ({
+    role: message.sender === requester ? "assistant" : "user",
+    content: message.content,
+  }));
 }
 
 export async function getCompletion(
@@ -24,40 +22,37 @@ export async function getCompletion(
   functionConfig: FunctionConfig
 ): Promise<FunctionCall | string | null> {
   const formattedMessages: ChatCompletionMessageParam[] = [
-    {
-      role: "system",
-      content: systemPrompt,
-    },
+    { role: "system", content: systemPrompt },
     ...mapMessages(requester, messages),
   ];
 
-  const completion = await openai.chat.completions.create({
-    messages: formattedMessages,
-    model: "gpt-4-0613",
-    functions: functionConfig.schemas,
-  });
+  try {
+    const { choices } = await openai.chat.completions.create({
+      messages: formattedMessages,
+      model: "gpt-4-0613",
+      functions: functionConfig.schemas,
+    });
 
-  const response = completion["choices"][0]["message"];
+    const { message } = choices[0];
+    const { function_call, content } = message;
 
-  if (response.function_call) {
-    try {
-      const functionArgs = JSON.parse(
-        formatJsonStr(response.function_call.arguments)
-      );
-      const functionName = response.function_call.name;
+    if (function_call) {
+      const functionArgs = JSON.parse(formatJsonStr(function_call.arguments));
       return {
-        name: functionName,
+        name: function_call.name,
         arguments: functionArgs,
-        content: response.content || "",
+        content: content || "",
       };
-    } catch (error) {
-      console.error("Error parsing function arguments");
-      throw error;
     }
-  }
 
-  return completion["choices"][0]["message"]["content"];
+    return content;
+
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 }
+
 
 function formatJsonStr(jstr: string): string {
   /* Remove newlines outside of quotes, and handle JSON escape sequences.
