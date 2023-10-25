@@ -28,7 +28,7 @@ Only use the functions that you have access to.`,
     }
   );
 
-  function handleStateUpdate(teamState: any) {
+  async function handleStateUpdate(teamState: any) {
     console.log(JSON.stringify(teamState));
   }
 

@@ -6,7 +6,7 @@ import { MemberResponse, Message, TeamState } from "./types";
 
 const MAX_ITERATIONS = 10; // Arbitrary limit for the event loop
 
-type StateHandler = (state: TeamState) => void;
+type StateHandler = (state: TeamState) => Promise<void>;
 export class Team {
   leader: TeamLeader;
   members: TeamMember[];
@@ -22,7 +22,7 @@ export class Team {
     this.members = members;
     this.everyone = [this.leader, ...this.members];
 
-    this.stateHandler = stateHandler || ((state) => {});
+    this.stateHandler = stateHandler || (async (_state) => {});
 
     this.initializeTeam();
   }
@@ -60,11 +60,15 @@ export class Team {
     };
   }
 
+  addStateHandler(stateHandler: StateHandler): void {
+    this.stateHandler = stateHandler;
+  }
+
   async chat(message: string): Promise<Message[]> {
     let iterationCount = 0;
 
     // Broadcast message to all team members and team leader
-    this.broadcastMessage(HUMAN_USER_NAME, message);
+    await this.broadcastMessage(HUMAN_USER_NAME, message);
 
     let teamMember: TeamMember = this.leader;
     let memberResponse = await teamMember.getResponse();
@@ -75,7 +79,7 @@ export class Team {
       }
 
       if (memberResponse.response) {
-        this.broadcastMessage(
+        await this.broadcastMessage(
           memberResponse.responder,
           memberResponse.response
         );
@@ -83,7 +87,7 @@ export class Team {
           memberResponse.response
         );
         if (codeBlocksResults) {
-          this.broadcastMessage(EXECUTOR, codeBlocksResults);
+          await this.broadcastMessage(EXECUTOR, codeBlocksResults);
           memberResponse = await teamMember.getResponse();
           continue;
         }
@@ -98,7 +102,7 @@ export class Team {
     );
   }
 
-  private getMemberForNextResponse(
+  getMemberForNextResponse(
     memberResponse: MemberResponse,
     currentTeamMember: TeamMember
   ): TeamMember {
@@ -109,13 +113,12 @@ export class Team {
     return this.getMemberByName(memberResponse.nextTeamMember);
   }
 
-  private broadcastMessage(senderName: string, message: string): void {
+  async broadcastMessage(senderName: string, message: string): Promise<void> {
     this.everyone.forEach((member) => member.addMessage(senderName, message));
-
-    this.stateHandler(this.getState());
+    await this.stateHandler(this.getState());
   }
 
-  private getMemberByName(name: string): TeamMember {
+  getMemberByName(name: string): TeamMember {
     if (name === this.leader.name) {
       return this.leader;
     }
