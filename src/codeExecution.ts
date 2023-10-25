@@ -6,23 +6,13 @@ import { Language, Code, CodeExecutionConfig } from "./types/chat";
 
 const exec = promisify(originalExec);
 
-// Does not extract single line code blocks as language would tend to typically not be specified
-// TODO: identify language of unknown multiline code blocks
-//       - probably using a forced function call? could probably then do single line code too
+// Does not extract single line code blocks as the language would tend to typically not be specified
 export function extractCode(text: string): [Language, Code][] {
   const codePattern = /```(\w+)?\s*([\s\S]*?)```/g;
   const match = [...text.matchAll(codePattern)];
   return match.map((m) => [m[1] || "", m[2]]);
 }
 
-// TODO: this should almost definitely not be running code on the actual fastify web server
-//       look at sandboxing this somehow - some options include:
-//       - firejail in linux
-//       - running inside docker containers on the web server or elsewhere
-//       - running inside a dedicated service that does this stuff
-//       - running inside AWS Lambda
-//       - for Python - using RestrictedPython might be an option
-// TODO: handle multiple files at once? handle filenames in code blocks?
 async function executeCode(
   language: string,
   code: string,

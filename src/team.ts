@@ -3,9 +3,6 @@ import { HUMAN_USER_NAME } from "./constants";
 import { MemberResponse, Message, TeamState } from "./types/chat";
 import { parseWithFns } from "./parsers";
 
-// TODO: make teams composable so you could have a team of teams, for example.
-// TODO: how to handle different types of teams? what if we wanted a big, flat team?
-
 const MAX_ITERATIONS = 10; // Arbitrary limit for the event loop
 export class Team {
   leader: TeamLeader;
@@ -18,7 +15,6 @@ export class Team {
   }
 
   initializeTeam(): void {
-    // TODO: feels a bit gross maybe
     this.leader.setTeam(this);
     this.members.forEach((member) => member.setTeam(this));
   }

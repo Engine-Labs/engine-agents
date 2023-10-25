@@ -48,12 +48,17 @@ See the [examples directory](./examples/) for more.
 
 ## Known issues
 
-- If code execution is enabled on an agent, it will attempt to execute any code it generates on the
+- Code execution: if enabled on an agent, it will attempt to execute any code it generates on the
   machine that it is running on - this code execution is currently **not sandboxed in any way** so
   use at your own risk!
 
-- This library has not been tested for compatibility on machines running Windows, which should only
-  matter when code execution is enabled
+- Code execution: this library has not been tested for compatibility on machines running Windows
+
+- Code execution: single line code blocks will not be executed
+
+- The max number of messages is capped and not yet configurable from outside the library
+
+- The LLM used to create the completions is not yet configurable from outside the library
 
 ## Roadmap
 
