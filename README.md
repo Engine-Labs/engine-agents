@@ -16,7 +16,9 @@ yarn add engine-agents
 ```
 
 You'll also need to make the environment variable OPENAI_API_KEY available wherever you're
-using this library. One way to do this is to copy [.env.example](./.env.example) to `.env`,
+using this library.
+
+If you're working on this library, one way to do this is to copy [.env.example](./.env.example) to `.env`,
 fill in your API key, and use `dotenv` as shown [below](#usage) and in the [examples](./examples/).
 
 ## Usage
@@ -60,10 +62,12 @@ See the [examples directory](./examples/) for more.
 
 - The LLM used to create the completions is not yet configurable from outside the library
 
+- Errors from the OpenAI API aren't handled gracefully or retried yet
+
 ## Roadmap
 
 Coming soon
 
 ## Contributing
 
-Coming soon
+Contributions and suggestions are welcome!
