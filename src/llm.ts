@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources";
-import type { FunctionCall, FunctionConfig, Message } from "./types/chat";
+import type { FunctionCall, FunctionConfig, Message } from "./types";
 
 const openai = new OpenAI();
 

@@ -1,6 +1,6 @@
 import { TeamMember, TeamLeader } from "./teamMembers";
 import { HUMAN_USER_NAME } from "./constants";
-import { MemberResponse, Message, TeamState } from "./types/chat";
+import { MemberResponse, Message, TeamState } from "./types";
 import { parseWithFns } from "./parsers";
 
 const MAX_ITERATIONS = 10; // Arbitrary limit for the event loop

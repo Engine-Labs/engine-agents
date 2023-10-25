@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { promisify } from "util";
 import { exec as originalExec } from "child_process";
-import { Language, Code, CodeExecutionConfig } from "./types/chat";
+import { Language, Code, CodeExecutionConfig } from "./types";
 
 const exec = promisify(originalExec);
 

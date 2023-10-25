@@ -11,7 +11,7 @@ import {
   MemberState,
   Message,
   isFunctionCall,
-} from "./types/chat";
+} from "./types";
 
 export class TeamMember {
   private static DEFAULT_FUNCTION_CONFIG: FunctionConfig = {
