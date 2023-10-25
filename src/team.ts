@@ -4,7 +4,7 @@ import { parseWithFns } from "./parsers";
 import { TeamLeader, TeamMember } from "./teamMembers";
 import { MemberResponse, Message, TeamState } from "./types";
 
-const MAX_ITERATIONS = 10; // Arbitrary limit for the event loop
+const MAX_ITERATIONS = 30; // Arbitrary limit for the event loop
 
 type StateHandler = (state: TeamState) => Promise<void>;
 export class Team {
@@ -96,10 +96,7 @@ export class Team {
       memberResponse = await teamMember.getResponse();
     }
 
-    // Filter out messages not from the team leader or human
-    return this.leader.messages.filter((msg) =>
-      [this.leader.name, HUMAN_USER_NAME].includes(msg.sender)
-    );
+    return this.leader.messages;
   }
 
   getMemberForNextResponse(
