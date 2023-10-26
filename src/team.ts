@@ -32,17 +32,19 @@ export class Team {
     this.everyone.forEach((member) => {
       member.addFunctionConfig({
         pass_control: {
-          schema: this.getPassControlSchema(),
+          schema: this.getPassControlSchema(member),
           function: function () {},
         },
       });
     });
   }
 
-  getPassControlSchema(): OpenAI.Chat.Completions.ChatCompletionCreateParams.Function {
+  getPassControlSchema(
+    member: TeamMember
+  ): OpenAI.Chat.Completions.ChatCompletionCreateParams.Function {
     return {
       name: "pass_control",
-      description: "Pass control to a team member.",
+      description: "Pass control to another team member when finished.",
       parameters: {
         type: "object",
         required: ["teamMember"],
@@ -51,7 +53,9 @@ export class Team {
             type: "string",
             enum: [
               HUMAN_USER_NAME,
-              ...this.everyone.map((member) => member.name),
+              ...this.everyone
+                .map((member) => member.name)
+                .filter((memberName) => memberName !== member.name),
             ],
             description: "The team member to pass control to.",
           },
@@ -74,11 +78,14 @@ export class Team {
     let memberResponse = await teamMember.getResponse();
 
     while (memberResponse.nextTeamMember !== HUMAN_USER_NAME) {
-      if (++iterationCount > MAX_ITERATIONS) {
-        throw new Error("Exceeded maximum allowed iterations in chat loop");
+      if (iterationCount > MAX_ITERATIONS) {
+        break;
       }
 
       if (memberResponse.response) {
+        // Only increase iteration count if there was a response
+        iterationCount = iterationCount + 1;
+
         await this.broadcastMessage(
           memberResponse.responder,
           memberResponse.response
@@ -94,6 +101,20 @@ export class Team {
       }
       teamMember = this.getMemberForNextResponse(memberResponse, teamMember);
       memberResponse = await teamMember.getResponse();
+    }
+
+    // Broadcast final message to all team members and team leader if there is a response
+    if (memberResponse.response) {
+      await this.broadcastMessage(
+        memberResponse.responder,
+        memberResponse.response
+      );
+      const codeBlocksResults = await teamMember.handleCodeBlocks(
+        memberResponse.response
+      );
+      if (codeBlocksResults) {
+        await this.broadcastMessage(EXECUTOR, codeBlocksResults);
+      }
     }
 
     return this.leader.messages;

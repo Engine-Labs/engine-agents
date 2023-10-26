@@ -50,11 +50,8 @@ export class TeamMember {
 
   setTeam(team: Team) {
     this.systemPrompt = `${this.originalSystemPrompt}
-Your team has the following members:
-${HUMAN_USER_NAME}
-${team.leader.name}
-${team.members.map((member) => member.name).join("\n")}
-You are the ${this.name}.
+Your role in the team is ${this.name}.
+You cannot pass control to yourself.
 `;
   }
 
@@ -136,13 +133,10 @@ export class TeamLeader extends TeamMember {
 
   setTeam(team: Team) {
     this.systemPrompt = `${this.originalSystemPrompt}
-Pass control back to the ${HUMAN_USER_NAME} to collect requirements until you are happy with the specification, then come up with a plan.
-Your team has the following members:
-${HUMAN_USER_NAME}
-${this.name}
-${team.members.map((member) => member.name).join("\n")}
-You are the ${this.name}.
-When all tasks have been completed, pass control back to the ${HUMAN_USER_NAME}.`;
+Your role in the team is ${this.name}.
+You cannot pass control to yourself.
+Unless otherwise specified, collect requirements by passing control back to the ${HUMAN_USER_NAME}, then come up with a plan.
+When your team is done, pass control back to the ${HUMAN_USER_NAME}.`;
 
     this.team = team;
   }
