@@ -7,6 +7,9 @@
 A multi-agent LLM framework inspired by Microsoft's [autogen](https://github.com/microsoft/autogen),
 designed to be friendlier to use behind APIs and written in TypeScript.
 
+Want a hosted version of this? [Sign up for the waitlist here](https://share-eu1.hsforms.com/1s6stLQg1SqqSJzRjF-xOBg2b9ek1)
+to access a hosted UI and API, coming in the next few days (as of 26th October 2023).
+
 ## Getting Started
 
 ```bash
