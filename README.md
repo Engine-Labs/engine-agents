@@ -3,6 +3,7 @@
 # Engine Agents
 
 [![NPM version](https://img.shields.io/npm/v/engine-agents)](https://npmjs.org/package/openai/engine-agents)
+[![](https://img.shields.io/discord/1113845829741056101?logo=discord&style=flat)](https://discord.gg/QnytC3Y7Wx)
 
 A multi-agent LLM framework inspired by Microsoft's [autogen](https://github.com/microsoft/autogen),
 designed to be friendlier to use behind APIs and written in TypeScript.
