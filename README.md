@@ -62,7 +62,7 @@ See the [examples directory](./examples/) for more.
 
 - Code execution: single line code blocks will not be executed
 
-- The max number of messages is currently capped at 10 and not yet configurable from outside the library
+- The max number of messages is currently capped at 30 and not yet configurable from outside the library
 
 - The LLM used to create the completions is not yet configurable from outside the library
 
@@ -72,6 +72,8 @@ See the [examples directory](./examples/) for more.
   be arrow functions because of how the config is serialized and deserialized
 
 - The groupchat model sometimes doesn't mesh well with returning only the responses from the TeamLeader of a Team
+
+- Allowing team members to pass control between themselves is currently fairly unreliable
 
 ## Roadmap
 
