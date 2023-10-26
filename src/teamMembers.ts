@@ -52,6 +52,7 @@ export class TeamMember {
     this.systemPrompt = `${this.originalSystemPrompt}
 Your role in the team is ${this.name}.
 You cannot pass control to yourself.
+Do not talk about the functions you have access to if you are not calling them.
 `;
   }
 
@@ -133,9 +134,9 @@ export class TeamLeader extends TeamMember {
 
   setTeam(team: Team) {
     this.systemPrompt = `${this.originalSystemPrompt}
-Your role in the team is ${this.name}.
+You are the team leader. Your role in the team is ${this.name}.
 You cannot pass control to yourself.
-Unless otherwise specified, collect requirements by passing control back to the ${HUMAN_USER_NAME}, then come up with a plan.
+Do not talk about the functions you have access to if you are not calling them.
 When your team is done, pass control back to the ${HUMAN_USER_NAME}.`;
 
     this.team = team;

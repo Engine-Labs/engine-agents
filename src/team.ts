@@ -44,7 +44,7 @@ export class Team {
   ): OpenAI.Chat.Completions.ChatCompletionCreateParams.Function {
     return {
       name: "pass_control",
-      description: "Pass control to another team member when finished.",
+      description: "Pass control to another team member when you are finished.",
       parameters: {
         type: "object",
         required: ["teamMember"],
@@ -57,7 +57,6 @@ export class Team {
                 .map((member) => member.name)
                 .filter((memberName) => memberName !== member.name),
             ],
-            description: "The team member to pass control to.",
           },
         },
       },
