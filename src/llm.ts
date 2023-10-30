@@ -43,8 +43,6 @@ export async function getCompletion(
     ...mapMessages(requester, messages),
   ];
 
-  console.log(formattedMessages);
-
   let functionSchemas = undefined;
   if (functionCall !== "none") {
     functionSchemas = Object.values(functionConfig).map(
@@ -62,8 +60,6 @@ export async function getCompletion(
 
     const { message } = choices[0];
     const { function_call, content } = message;
-
-    console.log(message);
 
     if (function_call) {
       const functionArgs = JSON.parse(formatJsonStr(function_call.arguments));
