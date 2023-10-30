@@ -5,11 +5,12 @@ export interface Message {
   content: string;
 }
 
+export interface FunctionConfigBody {
+  schema: OpenAI.Chat.Completions.ChatCompletionCreateParams.Function;
+  function: CallableFunction;
+}
 export interface FunctionConfig {
-  [name: string]: {
-    schema: OpenAI.Chat.Completions.ChatCompletionCreateParams.Function;
-    function: CallableFunction;
-  };
+  [name: string]: FunctionConfigBody;
 }
 
 export interface MemberState {
@@ -52,3 +53,8 @@ export interface CodeExecutionConfig {
   enabled: boolean;
   workingDirectory: string;
 }
+
+export type FunctionCallOption =
+  | "none"
+  | "auto"
+  | OpenAI.ChatCompletionCreateParams.FunctionCallOption;

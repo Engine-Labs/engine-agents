@@ -1,5 +1,12 @@
 import OpenAI from "openai";
-import { EXECUTOR, HUMAN_USER_NAME } from "./constants";
+import {
+  EXECUTOR,
+  GIVE_BACK_CONTROL,
+  GIVE_CONTROL,
+  HUMAN_USER_NAME,
+  FINISH_CHAT,
+  TEAM_LEADER,
+} from "./constants";
 import { parseWithFns } from "./parsers";
 import { TeamLeader, TeamMember } from "./teamMembers";
 import { MemberResponse, Message, TeamState } from "./types";
@@ -29,36 +36,60 @@ export class Team {
 
   initializeTeam(): void {
     this.everyone.forEach((member) => member.setTeam(this));
-    this.everyone.forEach((member) => {
-      member.addFunctionConfig({
-        pass_control: {
-          schema: this.getPassControlSchema(member),
-          function: function () {},
-        },
+    this.members.forEach((member) => {
+      member.addFunctionConfig(GIVE_BACK_CONTROL, {
+        schema: this.giveBackControlSchema(),
+        function: function () {},
       });
+    });
+    this.leader.addFunctionConfig(GIVE_CONTROL, {
+      schema: this.giveControlSchema(),
+      function: function () {},
+    });
+    this.leader.addFunctionConfig(FINISH_CHAT, {
+      schema: this.finishChatSchema(),
+      function: function () {},
     });
   }
 
-  getPassControlSchema(
-    member: TeamMember
-  ): OpenAI.Chat.Completions.ChatCompletionCreateParams.Function {
+  giveBackControlSchema(): OpenAI.Chat.Completions.ChatCompletionCreateParams.Function {
     return {
-      name: "pass_control",
-      description: "Pass control to another team member when you are finished.",
+      name: GIVE_BACK_CONTROL,
+      description:
+        "Give back chat control to the team leader when you are done.",
+      parameters: {
+        type: "object",
+        required: [],
+        properties: {},
+      },
+    };
+  }
+
+  giveControlSchema(): OpenAI.Chat.Completions.ChatCompletionCreateParams.Function {
+    return {
+      name: GIVE_CONTROL,
+      description: "Give control of the chat to another team member.",
       parameters: {
         type: "object",
         required: ["teamMember"],
         properties: {
           teamMember: {
             type: "string",
-            enum: [
-              HUMAN_USER_NAME,
-              ...this.everyone
-                .map((member) => member.name)
-                .filter((memberName) => memberName !== member.name),
-            ],
+            enum: this.members.map((member) => member.name),
           },
         },
+      },
+    };
+  }
+
+  finishChatSchema(): OpenAI.Chat.Completions.ChatCompletionCreateParams.Function {
+    return {
+      name: FINISH_CHAT,
+      description: "Finish the chat when done",
+      parameters: {
+        type: "object",
+        required: [],
+        properties: {},
       },
     };
   }
@@ -67,42 +98,10 @@ export class Team {
     this.stateHandler = stateHandler;
   }
 
-  async chat(message: string): Promise<Message[]> {
-    let iterationCount = 0;
-
-    // Broadcast message to all team members and team leader
-    await this.broadcastMessage(HUMAN_USER_NAME, message);
-
-    let teamMember: TeamMember = this.leader;
-    let memberResponse = await teamMember.getResponse();
-
-    while (memberResponse.nextTeamMember !== HUMAN_USER_NAME) {
-      if (iterationCount > MAX_ITERATIONS) {
-        break;
-      }
-
-      if (memberResponse.response) {
-        // Only increase iteration count if there was a response
-        iterationCount = iterationCount + 1;
-
-        await this.broadcastMessage(
-          memberResponse.responder,
-          memberResponse.response
-        );
-        const codeBlocksResults = await teamMember.handleCodeBlocks(
-          memberResponse.response
-        );
-        if (codeBlocksResults) {
-          await this.broadcastMessage(EXECUTOR, codeBlocksResults);
-          memberResponse = await teamMember.getResponse();
-          continue;
-        }
-      }
-      teamMember = this.getMemberForNextResponse(memberResponse, teamMember);
-      memberResponse = await teamMember.getResponse();
-    }
-
-    // Broadcast final message to all team members and team leader if there is a response
+  async handleResponse(
+    memberResponse: MemberResponse,
+    teamMember: TeamMember
+  ): Promise<MemberResponse | null> {
     if (memberResponse.response) {
       await this.broadcastMessage(
         memberResponse.responder,
@@ -113,8 +112,46 @@ export class Team {
       );
       if (codeBlocksResults) {
         await this.broadcastMessage(EXECUTOR, codeBlocksResults);
+        return await teamMember.getResponse();
       }
     }
+    return null;
+  }
+
+  async getAndHandleResponse(
+    teamMember: TeamMember,
+    force: boolean
+  ): Promise<MemberResponse> {
+    let memberResponse = await teamMember.getResponse(force);
+    const newResponse = await this.handleResponse(memberResponse, teamMember);
+    if (newResponse) {
+      return newResponse;
+    }
+    return memberResponse;
+  }
+
+  async chat(message: string): Promise<Message[]> {
+    await this.broadcastMessage(HUMAN_USER_NAME, message);
+
+    let teamMember: TeamMember = this.leader;
+    let force = false;
+    let memberResponse = await this.getAndHandleResponse(teamMember, force);
+
+    for (
+      let iterationCount = 0;
+      memberResponse.nextTeamMember !== HUMAN_USER_NAME &&
+      iterationCount <= MAX_ITERATIONS;
+      iterationCount++
+    ) {
+      if (memberResponse.responder !== teamMember.name) {
+        force = true;
+      }
+      teamMember = this.getMemberForNextResponse(memberResponse, teamMember);
+      memberResponse = await this.getAndHandleResponse(teamMember, force);
+      force = false; // Reset the force flag for the next iteration
+    }
+
+    await this.handleResponse(memberResponse, teamMember);
 
     return this.leader.messages;
   }
@@ -127,6 +164,11 @@ export class Team {
     if (!memberResponse.nextTeamMember) {
       return currentTeamMember;
     }
+
+    if (memberResponse.nextTeamMember === TEAM_LEADER) {
+      return this.leader;
+    }
+
     return this.getMemberByName(memberResponse.nextTeamMember);
   }
 

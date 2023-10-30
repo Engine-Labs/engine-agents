@@ -1,12 +1,21 @@
 import { executeCodeBlocks, extractCode } from "./codeExecution";
-import { HUMAN_USER_NAME } from "./constants";
+import {
+  EXECUTOR,
+  GIVE_BACK_CONTROL,
+  GIVE_CONTROL,
+  HUMAN_USER_NAME,
+  FINISH_CHAT,
+  TEAM_LEADER,
+} from "./constants";
 import { getCompletion } from "./llm";
 import { stringifyWithFns } from "./parsers";
 import { Team } from "./team";
 import {
   CodeExecutionConfig,
   FunctionCall,
+  FunctionCallOption,
   FunctionConfig,
+  FunctionConfigBody,
   MemberResponse,
   MemberState,
   Message,
@@ -41,28 +50,57 @@ export class TeamMember {
     this.messages.push({ sender: sender, content: message });
   }
 
-  addFunctionConfig(functionConfig: FunctionConfig) {
-    this.functionConfig = {
-      ...this.functionConfig,
-      ...functionConfig,
-    };
+  addFunctionConfig(name: string, config: FunctionConfigBody) {
+    this.functionConfig[name] = config;
   }
 
   setTeam(team: Team) {
     this.systemPrompt = `${this.originalSystemPrompt}
-Your role in the team is ${this.name}.
-You cannot pass control to yourself.
-Do not talk about the functions you have access to if you are not calling them.
-`;
+You take in turns to act as members of a team with the following members:
+${team.leader.name} (team leader)
+${team.members.map((member) => member.name).join("\n")}
+Currently, you are acting as ${this.name}.
+You announce who you are in your responses.`;
   }
 
-  async getResponse(): Promise<MemberResponse> {
-    const completion = await getCompletion(
+  async getResponse(force: boolean = false): Promise<MemberResponse> {
+    let functionCall = force ? "none" : "auto";
+    let completion = await getCompletion(
       this.name,
       this.systemPrompt,
       this.messages,
-      this.functionConfig
+      this.functionConfig,
+      functionCall as FunctionCallOption
     );
+
+    // Handle function calling appearing in body of completion
+    if (typeof completion === "string" && !force) {
+      if (completion.includes(GIVE_BACK_CONTROL)) {
+        completion = await getCompletion(
+          this.name,
+          this.systemPrompt,
+          this.messages,
+          this.functionConfig,
+          { name: GIVE_BACK_CONTROL }
+        );
+      } else if (completion.includes(GIVE_CONTROL)) {
+        completion = await getCompletion(
+          this.name,
+          this.systemPrompt,
+          this.messages,
+          this.functionConfig,
+          { name: GIVE_CONTROL }
+        );
+      } else if (completion.includes(FINISH_CHAT)) {
+        completion = await getCompletion(
+          this.name,
+          this.systemPrompt,
+          this.messages,
+          this.functionConfig,
+          { name: FINISH_CHAT }
+        );
+      }
+    }
 
     if (!completion) {
       throw new Error("No completion available");
@@ -94,9 +132,21 @@ Do not talk about the functions you have access to if you are not calling them.
     content,
   }: FunctionCall): Promise<MemberResponse> {
     // Handle pass control function as a special case
-    if (name === "pass_control") {
+    if (name === GIVE_BACK_CONTROL) {
+      return {
+        nextTeamMember: TEAM_LEADER,
+        responder: this.name,
+        response: content,
+      };
+    } else if (name === GIVE_CONTROL) {
       return {
         nextTeamMember: args.teamMember,
+        responder: this.name,
+        response: content,
+      };
+    } else if (name === FINISH_CHAT) {
+      return {
+        nextTeamMember: HUMAN_USER_NAME,
         responder: this.name,
         response: content,
       };
@@ -111,10 +161,11 @@ Do not talk about the functions you have access to if you are not calling them.
     }
 
     const functionResult = this.functionConfig[name].function(args);
+
     return {
       nextTeamMember: null,
-      responder: HUMAN_USER_NAME,
-      response: JSON.stringify(functionResult),
+      responder: EXECUTOR,
+      response: functionResult,
     };
   }
 
@@ -130,15 +181,14 @@ Do not talk about the functions you have access to if you are not calling them.
 }
 
 export class TeamLeader extends TeamMember {
-  team: Team | null = null;
-
   setTeam(team: Team) {
     this.systemPrompt = `${this.originalSystemPrompt}
-You are the team leader. Your role in the team is ${this.name}.
-You cannot pass control to yourself.
-Do not talk about the functions you have access to if you are not calling them.
-When your team is done, pass control back to the ${HUMAN_USER_NAME}.`;
-
-    this.team = team;
+You take in turns to act as members of a team with the following members:
+${team.leader.name} (team leader)
+${team.members.map((member) => member.name).join("\n")}
+Currently, you are acting as the team leader, ${this.name}.
+You announce who you are in your responses.
+Delegate to other team members as required.
+Finish the chat when the team are done.`;
   }
 }
