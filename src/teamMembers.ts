@@ -7,13 +7,12 @@ import {
   FINISH_CHAT,
   TEAM_LEADER,
 } from "./constants";
-import { getCompletion } from "./llm";
+import { formatJsonStr, getCompletion } from "./llm";
 import { stringifyWithFns } from "./parsers";
 import { Team } from "./team";
 import {
   CodeExecutionConfig,
   FunctionCall,
-  FunctionCallOption,
   FunctionConfig,
   FunctionConfigBody,
   MemberResponse,
@@ -55,50 +54,56 @@ export class TeamMember {
   }
 
   setTeam(team: Team) {
-    this.systemPrompt = `${this.originalSystemPrompt}
-You take in turns to act as members of a team with the following members:
+    this.systemPrompt = `You take in turns to act as members of a team with the following members:
 ${team.leader.name} (team leader)
 ${team.members.map((member) => member.name).join("\n")}
 Currently, you are acting as ${this.name}.
-You announce who you are in your responses.`;
+You announce who you are in your responses.
+${this.originalSystemPrompt}`;
   }
 
-  async getResponse(force: boolean = false): Promise<MemberResponse> {
-    let functionCall = force ? "none" : "auto";
+  getFunctionConfig(canPassControl: boolean = true): FunctionConfig {
+    if (!canPassControl) {
+      // filter out the control passing functions
+      return Object.fromEntries(
+        Object.entries(this.functionConfig).filter(
+          ([name, _]) =>
+            name !== GIVE_BACK_CONTROL &&
+            name !== GIVE_CONTROL &&
+            name !== FINISH_CHAT
+        )
+      );
+    } else {
+      return this.functionConfig;
+    }
+  }
+
+  async getResponse(canPassControl: boolean = true): Promise<MemberResponse> {
+    const functionConfig = this.getFunctionConfig(canPassControl);
+
     let completion = await getCompletion(
-      this.name,
       this.systemPrompt,
       this.messages,
-      this.functionConfig,
-      functionCall as FunctionCallOption
+      functionConfig
     );
 
-    // Handle function calling appearing in body of completion
-    if (typeof completion === "string" && !force) {
-      if (completion.includes(GIVE_BACK_CONTROL)) {
-        completion = await getCompletion(
-          this.name,
-          this.systemPrompt,
-          this.messages,
-          this.functionConfig,
-          { name: GIVE_BACK_CONTROL }
-        );
-      } else if (completion.includes(GIVE_CONTROL)) {
-        completion = await getCompletion(
-          this.name,
-          this.systemPrompt,
-          this.messages,
-          this.functionConfig,
-          { name: GIVE_CONTROL }
-        );
-      } else if (completion.includes(FINISH_CHAT)) {
-        completion = await getCompletion(
-          this.name,
-          this.systemPrompt,
-          this.messages,
-          this.functionConfig,
-          { name: FINISH_CHAT }
-        );
+    const retryCompletion = async (name: string) => {
+      return await getCompletion(
+        this.systemPrompt,
+        this.messages,
+        functionConfig,
+        { name }
+      );
+    };
+
+    // Handle the case in which a function call appears in body of completion
+    if (typeof completion === "string" && canPassControl) {
+      const controlFunctions = [GIVE_BACK_CONTROL, GIVE_CONTROL, FINISH_CHAT];
+      for (const controlFunction of controlFunctions) {
+        if (completion.includes(controlFunction)) {
+          completion = await retryCompletion(controlFunction);
+          break;
+        }
       }
     }
 
@@ -131,42 +136,62 @@ You announce who you are in your responses.`;
     arguments: args,
     content,
   }: FunctionCall): Promise<MemberResponse> {
-    // Handle pass control function as a special case
-    if (name === GIVE_BACK_CONTROL) {
-      return {
-        nextTeamMember: TEAM_LEADER,
-        responder: this.name,
-        response: content,
-      };
-    } else if (name === GIVE_CONTROL) {
-      return {
-        nextTeamMember: args.teamMember,
-        responder: this.name,
-        response: content,
-      };
-    } else if (name === FINISH_CHAT) {
-      return {
-        nextTeamMember: HUMAN_USER_NAME,
-        responder: this.name,
-        response: content,
-      };
-    }
-
-    if (!(name in this.functionConfig)) {
-      return {
-        nextTeamMember: null,
-        responder: this.name,
-        response: `No such function: ${name}`,
-      };
-    }
-
-    const functionResult = this.functionConfig[name].function(args);
-
-    return {
-      nextTeamMember: null,
-      responder: EXECUTOR,
-      response: functionResult,
+    // Don't bother parsing arguments for control function which don't have any
+    const parseArguments = (name: string, args: string): any => {
+      if (name === GIVE_BACK_CONTROL || name === FINISH_CHAT) {
+        return null;
+      }
+      return JSON.parse(formatJsonStr(args));
     };
+
+    const parsedArgs = parseArguments(name, args);
+
+    switch (name) {
+      case GIVE_BACK_CONTROL:
+        return {
+          nextTeamMember: TEAM_LEADER,
+          responder: this.name,
+          response: content,
+        };
+
+      case GIVE_CONTROL:
+        return {
+          nextTeamMember: parsedArgs.teamMember,
+          responder: this.name,
+          response: content,
+        };
+
+      case FINISH_CHAT:
+        return {
+          nextTeamMember: HUMAN_USER_NAME,
+          responder: this.name,
+          response: content,
+        };
+
+      default:
+        if (!(name in this.functionConfig)) {
+          return {
+            nextTeamMember: null,
+            responder: this.name,
+            response: `No such function: ${name}`,
+          };
+        }
+
+        const functionResult = await this.functionConfig[name].function(
+          parsedArgs
+        );
+
+        const formattedFunctionResult = `${content}
+function call: ${name}
+arguments: ${JSON.stringify(parsedArgs, null, 2)}
+result: ${functionResult}`;
+
+        return {
+          nextTeamMember: null,
+          responder: EXECUTOR,
+          response: formattedFunctionResult,
+        };
+    }
   }
 
   getState(): MemberState {
@@ -182,13 +207,13 @@ You announce who you are in your responses.`;
 
 export class TeamLeader extends TeamMember {
   setTeam(team: Team) {
-    this.systemPrompt = `${this.originalSystemPrompt}
-You take in turns to act as members of a team with the following members:
+    this.systemPrompt = `You take in turns to act as members of a team with the following members:
 ${team.leader.name} (team leader)
 ${team.members.map((member) => member.name).join("\n")}
 Currently, you are acting as the team leader, ${this.name}.
 You announce who you are in your responses.
 Delegate to other team members as required.
-Finish the chat when the team are done.`;
+Finish the chat when the team are done.
+${this.originalSystemPrompt}`;
   }
 }

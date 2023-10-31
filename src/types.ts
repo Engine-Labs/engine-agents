@@ -28,7 +28,7 @@ export interface TeamState {
 
 export interface FunctionCall {
   name: string;
-  arguments: any;
+  arguments: string;
   content: string;
 }
 
