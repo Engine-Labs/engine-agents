@@ -1,17 +1,16 @@
 import OpenAI from "openai";
 import {
   EXECUTOR,
+  FINISH_CHAT,
   GIVE_BACK_CONTROL,
   GIVE_CONTROL,
   HUMAN_USER_NAME,
-  FINISH_CHAT,
+  MAX_ITERATIONS,
   TEAM_LEADER,
 } from "./constants";
 import { parseWithFns } from "./parsers";
 import { TeamLeader, TeamMember } from "./teamMembers";
 import { MemberResponse, Message, TeamState } from "./types";
-
-const MAX_ITERATIONS = 30; // Arbitrary limit for the event loop
 
 type StateHandler = (state: TeamState) => Promise<void>;
 export class Team {
@@ -28,9 +27,7 @@ export class Team {
     this.leader = leader;
     this.members = members;
     this.everyone = [this.leader, ...this.members];
-
     this.stateHandler = stateHandler || (async (_state) => {});
-
     this.initializeTeam();
   }
 
@@ -39,16 +36,16 @@ export class Team {
     this.members.forEach((member) => {
       member.addFunctionConfig(GIVE_BACK_CONTROL, {
         schema: this.giveBackControlSchema(),
-        function: function () {},
+        function: async function () {},
       });
     });
     this.leader.addFunctionConfig(GIVE_CONTROL, {
       schema: this.giveControlSchema(),
-      function: function () {},
+      function: async function () {},
     });
     this.leader.addFunctionConfig(FINISH_CHAT, {
       schema: this.finishChatSchema(),
-      function: function () {},
+      function: async function () {},
     });
   }
 
@@ -120,9 +117,9 @@ export class Team {
 
   async getAndHandleResponse(
     teamMember: TeamMember,
-    force: boolean
+    canPassControl: boolean
   ): Promise<MemberResponse> {
-    let memberResponse = await teamMember.getResponse(force);
+    let memberResponse = await teamMember.getResponse(canPassControl);
     const newResponse = await this.handleResponse(memberResponse, teamMember);
     if (newResponse) {
       return newResponse;
@@ -134,8 +131,9 @@ export class Team {
     await this.broadcastMessage(HUMAN_USER_NAME, message);
 
     let teamMember: TeamMember = this.leader;
-    let force = false;
-    let memberResponse = await this.getAndHandleResponse(teamMember, force);
+    let memberResponse = await this.getAndHandleResponse(teamMember, false);
+
+    let previousTeamMember: TeamMember | null = null;
 
     for (
       let iterationCount = 0;
@@ -143,12 +141,16 @@ export class Team {
       iterationCount <= MAX_ITERATIONS;
       iterationCount++
     ) {
-      if (memberResponse.responder !== teamMember.name) {
-        force = true;
-      }
+      previousTeamMember = teamMember;
       teamMember = this.getMemberForNextResponse(memberResponse, teamMember);
-      memberResponse = await this.getAndHandleResponse(teamMember, force);
-      force = false; // Reset the force flag for the next iteration
+
+      // allow passing control only if the next teamMember is the same as the previous one
+      const canPassControl = previousTeamMember === teamMember;
+
+      memberResponse = await this.getAndHandleResponse(
+        teamMember,
+        canPassControl
+      );
     }
 
     await this.handleResponse(memberResponse, teamMember);

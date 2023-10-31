@@ -10,41 +10,34 @@ import { EXECUTOR, HUMAN_USER_NAME } from "./constants";
 
 const openai = new OpenAI();
 
-function getRole(
-  senderName: string,
-  requester: string
-): OpenAI.ChatCompletionRole {
+function getRole(senderName: string): OpenAI.ChatCompletionRole {
   if (senderName === HUMAN_USER_NAME || senderName === EXECUTOR) {
     return "user";
   }
   return "assistant";
 }
 
-function mapMessages(
-  requester: string,
-  messages: Message[]
-): ChatCompletionMessageParam[] {
+function mapMessages(messages: Message[]): ChatCompletionMessageParam[] {
   // Messages previously sent by the requesting member are considered 'assistant' messages
   return messages.map((message) => ({
-    role: getRole(message.sender, requester),
+    role: getRole(message.sender),
     content: message.content,
   }));
 }
 
 export async function getCompletion(
-  requester: string,
   systemPrompt: string,
   messages: Message[],
   functionConfig: FunctionConfig,
-  functionCall: FunctionCallOption
+  functionCall: FunctionCallOption = "auto"
 ): Promise<FunctionCall | string | null> {
   const formattedMessages: ChatCompletionMessageParam[] = [
     { role: "system", content: systemPrompt },
-    ...mapMessages(requester, messages),
+    ...mapMessages(messages),
   ];
 
   let functionSchemas = undefined;
-  if (functionCall !== "none") {
+  if (functionCall !== "none" && Object.keys(functionConfig).length > 0) {
     functionSchemas = Object.values(functionConfig).map(
       (config) => config.schema
     );
@@ -62,10 +55,9 @@ export async function getCompletion(
     const { function_call, content } = message;
 
     if (function_call) {
-      const functionArgs = JSON.parse(formatJsonStr(function_call.arguments));
       return {
         name: function_call.name,
-        arguments: functionArgs,
+        arguments: function_call.arguments,
         content: content || "",
       };
     }
@@ -75,7 +67,7 @@ export async function getCompletion(
     if (extractedFunctionCall) {
       return {
         name: extractedFunctionCall.name,
-        arguments: JSON.parse(formatJsonStr(extractedFunctionCall.arguments)),
+        arguments: extractedFunctionCall.arguments,
         content: extractedFunctionCall.content,
       };
     }
@@ -87,7 +79,7 @@ export async function getCompletion(
   }
 }
 
-function formatJsonStr(jstr: string): string {
+export function formatJsonStr(jstr: string): string {
   /* Remove newlines outside of quotes, and handle JSON escape sequences.
 
   1. this function removes the newline in the query outside of quotes otherwise JSON.parse(s) will fail.
