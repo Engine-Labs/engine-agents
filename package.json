@@ -1,6 +1,6 @@
 {
   "name": "engine-agents",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "A multi-agent framework for LLM applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
