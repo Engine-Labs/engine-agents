@@ -4,7 +4,7 @@ import {
   GIVE_BACK_CONTROL,
   GIVE_CONTROL,
   HUMAN_USER_NAME,
-  FINISH_CHAT,
+  PASS_TO_USER,
   TEAM_LEADER,
 } from "./constants";
 import { formatJsonStr, getCompletion } from "./llm";
@@ -70,7 +70,7 @@ ${this.originalSystemPrompt}`;
           ([name, _]) =>
             name !== GIVE_BACK_CONTROL &&
             name !== GIVE_CONTROL &&
-            name !== FINISH_CHAT
+            name !== PASS_TO_USER
         )
       );
     } else {
@@ -98,7 +98,7 @@ ${this.originalSystemPrompt}`;
 
     // Handle the case in which a function call appears in body of completion
     if (typeof completion === "string" && canPassControl) {
-      const controlFunctions = [GIVE_BACK_CONTROL, GIVE_CONTROL, FINISH_CHAT];
+      const controlFunctions = [GIVE_BACK_CONTROL, GIVE_CONTROL, PASS_TO_USER];
       for (const controlFunction of controlFunctions) {
         if (completion.includes(controlFunction)) {
           completion = await retryCompletion(controlFunction);
@@ -138,7 +138,7 @@ ${this.originalSystemPrompt}`;
   }: FunctionCall): Promise<MemberResponse> {
     // Don't bother parsing arguments for control function which don't have any
     const parseArguments = (name: string, args: string): any => {
-      if (name === GIVE_BACK_CONTROL || name === FINISH_CHAT) {
+      if (name === GIVE_BACK_CONTROL || name === PASS_TO_USER) {
         return null;
       }
       return JSON.parse(formatJsonStr(args));
@@ -161,7 +161,7 @@ ${this.originalSystemPrompt}`;
           response: content,
         };
 
-      case FINISH_CHAT:
+      case PASS_TO_USER:
         return {
           nextTeamMember: HUMAN_USER_NAME,
           responder: this.name,
@@ -213,7 +213,8 @@ ${team.members.map((member) => member.name).join("\n")}
 Currently, you are acting as the team leader, ${this.name}.
 You announce who you are in your responses.
 Delegate to other team members as required.
-Finish the chat when the team are done.
+If you have any questions for the user or if you need input from them, pass control to the user.
+If you and the team are done, pass control to the user.
 ${this.originalSystemPrompt}`;
   }
 }
