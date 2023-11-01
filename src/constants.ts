@@ -4,6 +4,6 @@ export const TEAM_LEADER = "System Team Leader";
 
 export const GIVE_CONTROL = "give_chat_control";
 export const GIVE_BACK_CONTROL = "give_chat_control_to_leader";
-export const FINISH_CHAT = "finish_chat";
+export const PASS_TO_USER = "pass_chat_control_to_user";
 
 export const MAX_ITERATIONS = 30; // limit for agent messages loop

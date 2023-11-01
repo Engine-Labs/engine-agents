@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import {
   EXECUTOR,
-  FINISH_CHAT,
+  PASS_TO_USER,
   GIVE_BACK_CONTROL,
   GIVE_CONTROL,
   HUMAN_USER_NAME,
@@ -43,8 +43,8 @@ export class Team {
       schema: this.giveControlSchema(),
       function: async function () {},
     });
-    this.leader.addFunctionConfig(FINISH_CHAT, {
-      schema: this.finishChatSchema(),
+    this.leader.addFunctionConfig(PASS_TO_USER, {
+      schema: this.passToUserSchema(),
       function: async function () {},
     });
   }
@@ -79,10 +79,10 @@ export class Team {
     };
   }
 
-  finishChatSchema(): OpenAI.Chat.Completions.ChatCompletionCreateParams.Function {
+  passToUserSchema(): OpenAI.Chat.Completions.ChatCompletionCreateParams.Function {
     return {
-      name: FINISH_CHAT,
-      description: "Finish the chat when done",
+      name: PASS_TO_USER,
+      description: "Pass control of the chat to the human user.",
       parameters: {
         type: "object",
         required: [],
