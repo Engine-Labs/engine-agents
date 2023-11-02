@@ -17,6 +17,8 @@
     "openai": "^4.13.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-iam": "^3.438.0",
+    "@aws-sdk/client-lambda": "^3.438.0",
     "dotenv": "^16.3.1"
   },
   "license": "MIT"
