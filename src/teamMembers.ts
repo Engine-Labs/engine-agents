@@ -54,11 +54,13 @@ export class TeamMember {
   }
 
   setTeam(team: Team) {
-    this.systemPrompt = `You take in turns to act as members of a team with the following members:
+    this.systemPrompt = `You act as members of a team with the following members:
 ${team.leader.name} (team leader)
 ${team.members.map((member) => member.name).join("\n")}
 Currently, you are acting as ${this.name}.
-You announce who you are in your responses.
+You cannot currently act as anyone else - please stick to your current role, and announce it in your responses.
+Pass control back to the team leader using the function you have access to when you are done.
+Do not talk about passing control if you are not using the function to do so.
 ${this.originalSystemPrompt}`;
   }
 
@@ -207,14 +209,15 @@ result: ${functionResult}`.trim();
 
 export class TeamLeader extends TeamMember {
   setTeam(team: Team) {
-    this.systemPrompt = `You take in turns to act as members of a team with the following members:
+    this.systemPrompt = `You act as members of a team with the following members:
 ${team.leader.name} (team leader)
 ${team.members.map((member) => member.name).join("\n")}
-Currently, you are acting as the team leader, ${this.name}.
-You announce who you are in your responses.
-Delegate to other team members as required.
+Currently, you are acting as ${this.name}.
+You cannot currently act as anyone else - please stick to your current role, and announce it in your responses.
+Give control to other team members as required using the function you have access to.
 If you have any questions for the user or if you need input from them, pass control to the user.
 If you and the team are done, pass control to the user.
+Do not talk about passing or giving control if you are not using your functions to do so.
 ${this.originalSystemPrompt}`;
   }
 }
