@@ -169,7 +169,8 @@ Put any requirements in a requirements.txt file.`,
   );
 
   async function handleStateUpdate(teamState: any) {
-    // console.log(JSON.stringify(teamState, null, 2));
+    // uncomment to see intermediate states
+    // console.log(JSON.stringify(teamState));
   }
 
   const team = new Team(

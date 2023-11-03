@@ -90,7 +90,8 @@ Your software engineer can write Python scripts and save them to file, and your 
   );
 
   async function handleStateUpdate(teamState: any) {
-    // console.log(JSON.stringify(teamState, null, 2));
+    // uncomment to see intermediate states
+    // console.log(JSON.stringify(teamState));
   }
 
   const team = new Team(

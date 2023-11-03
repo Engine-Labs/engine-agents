@@ -162,11 +162,12 @@ When creating or updating blobs, you must provide a JSON-serializable object.`,
     }
   );
 
-  async function handleTeamStateUpdate(teamState: any) {
-    // console.log(JSON.stringify(teamState, null, 2));
+  async function handleStateUpdate(teamState: any) {
+    // uncomment to see intermediate states
+    // console.log(JSON.stringify(teamState));
   }
 
-  const team = new Team(assistant, [], handleTeamStateUpdate);
+  const team = new Team(assistant, [], handleStateUpdate);
 
   const teamState = team.getState();
   const restoredTeam = Team.fromState(teamState);
