@@ -178,13 +178,10 @@ export class Team {
       (member) => member.name === nextMemberName
     );
     if (!teamMember) {
-      let message = `No such team member exists: ${nextMemberName}.`;
-      if (this.members.length > 0) {
-        message += ` Please choose from one of the following team members:
+      let message = `No such team member exists: ${nextMemberName}.
+Please choose from one of the following team members:
 ${this.members.map((member) => member.name).join("\n")}`;
-      } else {
-        message += " Please try to solve the problem yourself.";
-      }
+
       await this.broadcastMessage(EXECUTOR, message);
       return currentTeamMember;
     }
