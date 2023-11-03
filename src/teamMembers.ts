@@ -98,12 +98,23 @@ ${this.originalSystemPrompt}`;
       );
     };
 
-    // Handle the case in which a function call appears in body of completion
+    // Handle the case in which a control function call appears in body of completion
     if (typeof completion === "string" && canPassControl) {
       const controlFunctions = [GIVE_BACK_CONTROL, GIVE_CONTROL, PASS_TO_USER];
       for (const controlFunction of controlFunctions) {
         if (completion.includes(controlFunction)) {
           completion = await retryCompletion(controlFunction);
+          break;
+        }
+      }
+    }
+
+    // Handle the case in which a regular function call appears in body of completion
+    if (typeof completion === "string") {
+      const functionNames = Object.keys(functionConfig);
+      for (const functionName of functionNames) {
+        if (completion.includes(functionName)) {
+          completion = await retryCompletion(functionName);
           break;
         }
       }

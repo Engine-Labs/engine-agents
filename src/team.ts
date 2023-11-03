@@ -186,6 +186,8 @@ export class Team {
 
     const teamMember = this.members.find((member) => member.name === name);
     if (!teamMember) {
+      // TODO: handle more gracefully? sometimes the team member is just 'user'
+      //       so we could special case handle it if it appears more frequently
       throw new Error(`Team member with name ${name} not found.`);
     }
     return teamMember;
