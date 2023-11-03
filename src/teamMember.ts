@@ -197,7 +197,7 @@ ${this.originalSystemPrompt}`;
         const formattedFunctionResult = `${content}
 function call: ${name}
 arguments: ${JSON.stringify(parsedArgs, null, 2)}
-result: ${functionResult}`.trim();
+result: ${functionResult || "[No output]"}`.trim();
 
         return {
           nextTeamMember: null,

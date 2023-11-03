@@ -28,9 +28,9 @@ export const LANGUAGE_TO_FILE_EXTENSION: { [K in SupportedLanguage]: string } =
   };
 
 export const COMMAND_PATTERNS: { [K in SupportedLanguage]: string } = {
-  python: "cd {DIR} && python {FILE}",
+  python: "cd {DIR} && python3 {FILE}",
   python3: "cd {DIR} && python3 {FILE}",
   bash: "cd {DIR} && bash {FILE}",
-  sh: "cd {DIR} && sh {FILE}",
-  shell: "cd {DIR} && sh {FILE}",
+  sh: "cd {DIR} && bash {FILE}",
+  shell: "cd {DIR} && bash {FILE}",
 };
