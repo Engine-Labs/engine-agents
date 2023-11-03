@@ -1,8 +1,14 @@
+import { exec as originalExec } from "child_process";
 import fs from "fs";
 import path from "path";
 import { promisify } from "util";
-import { exec as originalExec } from "child_process";
-import { Language, Code, CodeExecutionConfig } from "./types";
+import {
+  COMMAND_PATTERNS,
+  LANGUAGE_TO_FILE_EXTENSION,
+  SUPPORTED_LANGUAGES,
+  SupportedLanguage,
+} from "./constants";
+import { Code, CodeExecutionConfig, Language } from "./types";
 
 const exec = promisify(originalExec);
 
@@ -21,7 +27,8 @@ async function executeCode(
   // Make sure working directory exists
   fs.mkdirSync(workingDirectory, { recursive: true });
 
-  const fileExt = getFileType(language);
+  const fileExt = getFileExtension(language);
+  // TODO: provide unique file names here
   const fileName = fileExt ? `code.${fileExt}` : "code";
   const filePath = path.join(workingDirectory, fileName);
   fs.writeFileSync(filePath, code);
@@ -43,15 +50,17 @@ ${error.stderr}`;
   return logs;
 }
 
-function getFileType(language: string): string {
-  switch (language.toLowerCase()) {
-    case "python":
-      return "py";
-    case "bash":
-    case "sh":
-      return "";
-    default:
-      throw new Error(`Unsupported language: ${language}`);
+function isSupportedLanguage(lang: string): lang is SupportedLanguage {
+  return SUPPORTED_LANGUAGES.has(lang as SupportedLanguage);
+}
+
+function getFileExtension(language: string): string {
+  const lowerCaseLanguage = language.toLowerCase();
+
+  if (isSupportedLanguage(lowerCaseLanguage)) {
+    return LANGUAGE_TO_FILE_EXTENSION[lowerCaseLanguage];
+  } else {
+    throw new Error(`Unsupported language: ${language}`);
   }
 }
 
@@ -60,33 +69,37 @@ function getCommand(
   workingDirectory: string,
   filePath: string
 ): string {
-  switch (language.toLowerCase()) {
-    case "python":
-      return `cd ${workingDirectory} && python3 ${filePath}`;
-    case "bash":
-    case "sh":
-      return `cd ${workingDirectory} && ${language.toLowerCase()} ${filePath}`;
-    default:
-      throw new Error(`Unsupported language: ${language}`);
+  const lowerCaseLanguage = language.toLowerCase();
+  if (!isSupportedLanguage(lowerCaseLanguage)) {
+    throw new Error(`Unsupported language: ${language}`);
   }
+  const commandPattern = COMMAND_PATTERNS[lowerCaseLanguage];
+  // The check above ensures that commandPattern will not be undefined
+  return commandPattern
+    .replace("{DIR}", workingDirectory)
+    .replace("{FILE}", filePath);
 }
 
 export async function executeCodeBlocks(
   codeBlocks: [Language, Code][],
   codeExecutionConfig: CodeExecutionConfig
 ): Promise<string> {
-  const results: string[] = [];
+  const supportedCodeBlocks = codeBlocks.filter(([language]) =>
+    isSupportedLanguage(language.toLowerCase())
+  );
 
-  for (const [language, code] of codeBlocks) {
-    if (["python", "bash"].includes(language.toLowerCase())) {
-      const logs = await executeCode(
-        language,
-        code,
-        codeExecutionConfig.workingDirectory
-      );
-      results.push(logs);
-    }
+  const results = [];
+
+  // Execute each supported code block sequentially to allow prerequisites to be installed if needed
+  for (const [language, code] of supportedCodeBlocks) {
+    const result = await executeCode(
+      language,
+      code,
+      codeExecutionConfig.workingDirectory
+    );
+    results.push(result);
   }
 
+  // Join the results into a single string
   return results.join("\n");
 }

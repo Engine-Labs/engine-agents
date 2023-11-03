@@ -2,7 +2,8 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 import { Team } from "../src/team";
-import { TeamLeader, TeamMember } from "../src/teamMembers";
+import { TeamLeader } from "../src/teamLeader";
+import { TeamMember } from "../src/teamMember";
 
 async function researchGroupChat() {
   const engineer = new TeamMember(

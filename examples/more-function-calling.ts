@@ -1,8 +1,9 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import { TeamLeader, TeamMember } from "../src/teamMembers";
 import { Team } from "../src/team";
+import { TeamLeader } from "../src/teamLeader";
+import { TeamMember } from "../src/teamMember";
 
 async function run() {
   const assistant = new TeamLeader(
@@ -99,7 +100,9 @@ Your software engineer can write Python scripts and save them to file, and your 
             },
           },
         },
-        function: async function install_requirements(args: { filename: string }) {
+        function: async function install_requirements(args: {
+          filename: string;
+        }) {
           const { exec } = require("child_process");
           const { promisify } = require("util");
           const execAsync = promisify(exec);
