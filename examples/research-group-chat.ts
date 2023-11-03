@@ -35,7 +35,8 @@ Explain the plan first. Be clear which step is performed by an engineer, and whi
   );
 
   async function handleStateUpdate(teamState: any) {
-    console.log(JSON.stringify(teamState));
+    // uncomment to see intermediate states
+    // console.log(JSON.stringify(teamState));
   }
 
   const team = new Team(
