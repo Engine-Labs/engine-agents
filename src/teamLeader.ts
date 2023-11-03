@@ -15,8 +15,10 @@ ${team.members.map((member) => member.name).join("\n")}
 Currently, you are acting as ${this.name}.
 You cannot currently act as anyone else - please stick to your current role, and announce it in your responses.
 ${giveControlMessage}
-If you have any questions for the user or if you need input from them, pass control to the user.
-If you and the team are done, pass control to the user.
+Only pass control to the user if:
+- you have questions for them, or
+- you need input from them, or
+- you and the team and finished
 Do not talk about passing or giving control if you are not using your functions to do so.
 ${this.originalSystemPrompt}`;
   }

@@ -101,7 +101,7 @@ export class Team {
   async handleResponse(
     memberResponse: MemberResponse,
     teamMember: TeamMember
-  ): Promise<MemberResponse | null> {
+  ): Promise<void> {
     if (memberResponse.response) {
       await this.broadcastMessage(
         memberResponse.responder,
@@ -112,10 +112,8 @@ export class Team {
       );
       if (codeBlocksResults) {
         await this.broadcastMessage(EXECUTOR, codeBlocksResults);
-        return await teamMember.getResponse();
       }
     }
-    return null;
   }
 
   async getAndHandleResponse(
@@ -123,10 +121,7 @@ export class Team {
     canPassControl: boolean
   ): Promise<MemberResponse> {
     let memberResponse = await teamMember.getResponse(canPassControl);
-    const newResponse = await this.handleResponse(memberResponse, teamMember);
-    if (newResponse) {
-      return newResponse;
-    }
+    await this.handleResponse(memberResponse, teamMember);
     return memberResponse;
   }
 
