@@ -69,11 +69,7 @@ See the [examples directory](./examples/) for more.
 - Errors from the OpenAI API aren't handled gracefully or retried yet
 
 - When defining function calls with FunctionConfig, function implementations must not
-  be arrow functions because of how the config is serialized and deserialized
-
-- The groupchat model sometimes doesn't mesh well with returning only the responses from the TeamLeader of a Team
-
-- Allowing team members to pass control between themselves is currently fairly unreliable
+  be arrow functions because of how the config is serialized and deserialized, and should be async
 
 ## Roadmap
 
