@@ -40,10 +40,12 @@ export class Team {
         function: async function () {},
       });
     });
-    this.leader.addFunctionConfig(GIVE_CONTROL, {
-      schema: this.giveControlSchema(),
-      function: async function () {},
-    });
+    if (this.members.length > 0) {
+      this.leader.addFunctionConfig(GIVE_CONTROL, {
+        schema: this.giveControlSchema(),
+        function: async function () {},
+      });
+    }
     this.leader.addFunctionConfig(PASS_TO_USER, {
       schema: this.passToUserSchema(),
       function: async function () {},
@@ -143,7 +145,10 @@ export class Team {
       iterationCount++
     ) {
       previousTeamMember = teamMember;
-      teamMember = this.getMemberForNextResponse(memberResponse, teamMember);
+      teamMember = await this.getMemberForNextResponse(
+        memberResponse,
+        teamMember
+      );
 
       // allow passing control only if the next teamMember is the same as the previous one
       const canPassControl = previousTeamMember === teamMember;
@@ -159,39 +164,41 @@ export class Team {
     return this.leader.messages;
   }
 
-  getMemberForNextResponse(
+  async getMemberForNextResponse(
     memberResponse: MemberResponse,
     currentTeamMember: TeamMember
-  ): TeamMember {
+  ): Promise<TeamMember> {
+    const nextMemberName = memberResponse.nextTeamMember;
+
     // If there's no specified member, it's the current member's turn again
-    if (!memberResponse.nextTeamMember) {
+    if (!nextMemberName) {
       return currentTeamMember;
     }
 
-    if (memberResponse.nextTeamMember === TEAM_LEADER) {
+    if (nextMemberName === TEAM_LEADER || nextMemberName === this.leader.name) {
       return this.leader;
     }
 
-    return this.getMemberByName(memberResponse.nextTeamMember);
+    const teamMember = this.members.find(
+      (member) => member.name === nextMemberName
+    );
+    if (!teamMember) {
+      let message = `No such team member exists: ${nextMemberName}.`;
+      if (this.members.length > 0) {
+        message += ` Please choose from one of the following team members:
+${this.members.map((member) => member.name).join("\n")}`;
+      } else {
+        message += " Please try to solve the problem yourself.";
+      }
+      await this.broadcastMessage(EXECUTOR, message);
+      return currentTeamMember;
+    }
+    return teamMember;
   }
 
   async broadcastMessage(senderName: string, message: string): Promise<void> {
     this.everyone.forEach((member) => member.addMessage(senderName, message));
     await this.stateHandler(this.getState());
-  }
-
-  getMemberByName(name: string): TeamMember {
-    if (name === this.leader.name) {
-      return this.leader;
-    }
-
-    const teamMember = this.members.find((member) => member.name === name);
-    if (!teamMember) {
-      // TODO: handle more gracefully? sometimes the team member is just 'user'
-      //       so we could special case handle it if it appears more frequently
-      throw new Error(`Team member with name ${name} not found.`);
-    }
-    return teamMember;
   }
 
   static fromState(state: TeamState) {
