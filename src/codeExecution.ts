@@ -8,7 +8,7 @@ import {
   SUPPORTED_LANGUAGES,
   SupportedLanguage,
 } from "./constants";
-import { Code, CodeExecutionConfig, Language } from "./types";
+import { Code, CodeExecutionConfig, ExecutionResult, Language } from "./types";
 
 const exec = promisify(originalExec);
 
@@ -23,7 +23,7 @@ async function executeCode(
   language: string,
   code: string,
   workingDirectory: string
-): Promise<string> {
+): Promise<ExecutionResult> {
   // Make sure working directory exists
   fs.mkdirSync(workingDirectory, { recursive: true });
 
@@ -33,21 +33,27 @@ async function executeCode(
   const filePath = path.join(workingDirectory, fileName);
   fs.writeFileSync(filePath, code);
 
-  let logs;
+  let result: ExecutionResult;
   const command = getCommand(language, workingDirectory, filePath);
 
   try {
     const cmdResult = await exec(command);
-    logs = `Execution successful.
-${cmdResult.stdout}`;
+    result = {
+      success: true,
+      logs: `${language}: Execution successful.
+${cmdResult.stdout}`,
+    };
   } catch (e) {
     const error = e as any;
-    logs = `Execution failed:
-${error.stderr}`;
+    result = {
+      success: false,
+      logs: `${language}: Execution failed:
+${error.stderr}`,
+    };
   }
 
   fs.unlinkSync(filePath);
-  return logs;
+  return result;
 }
 
 function isSupportedLanguage(lang: string): lang is SupportedLanguage {
@@ -88,7 +94,7 @@ export async function executeCodeBlocks(
     isSupportedLanguage(language.toLowerCase())
   );
 
-  const results = [];
+  const results: string[] = [];
 
   // Execute each supported code block sequentially to allow prerequisites to be installed if needed
   for (const [language, code] of supportedCodeBlocks) {
@@ -97,7 +103,13 @@ export async function executeCodeBlocks(
       code,
       codeExecutionConfig.workingDirectory
     );
-    results.push(result);
+
+    results.push(result.logs);
+
+    // break out of execution if there's a failure
+    if (!result.success) {
+      break;
+    }
   }
 
   // Join the results into a single string

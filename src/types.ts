@@ -58,3 +58,8 @@ export type FunctionCallOption =
   | "none"
   | "auto"
   | OpenAI.ChatCompletionCreateParams.FunctionCallOption;
+
+export type ExecutionResult = {
+  success: boolean;
+  logs: string;
+};
