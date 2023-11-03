@@ -2,7 +2,8 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 import { Team } from "../src/team";
-import { TeamLeader, TeamMember } from "../src/teamMembers";
+import { TeamLeader } from "../src/teamLeader";
+import { TeamMember } from "../src/teamMember";
 
 async function cSuiteIntroductions() {
   const ceo = new TeamLeader("CEO", "");
@@ -13,7 +14,9 @@ async function cSuiteIntroductions() {
 
   const team = new Team(ceo, [cto, cfo]);
 
-  const chat = await team.chat("Could you please introduce yourselves one by one?");
+  const chat = await team.chat(
+    "Could you please introduce yourselves one by one?"
+  );
 
   console.log(chat);
 }

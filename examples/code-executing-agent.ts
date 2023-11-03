@@ -1,8 +1,8 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import { TeamLeader } from "../src/teamMembers";
 import { Team } from "../src/team";
+import { TeamLeader } from "../src/teamLeader";
 
 async function main() {
   const softwareEngineer = new TeamLeader(

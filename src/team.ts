@@ -1,15 +1,16 @@
 import OpenAI from "openai";
 import {
   EXECUTOR,
-  PASS_TO_USER,
   GIVE_BACK_CONTROL,
   GIVE_CONTROL,
   HUMAN_USER_NAME,
   MAX_ITERATIONS,
+  PASS_TO_USER,
   TEAM_LEADER,
 } from "./constants";
 import { parseWithFns } from "./parsers";
-import { TeamLeader, TeamMember } from "./teamMembers";
+import { TeamLeader } from "./teamLeader";
+import { TeamMember } from "./teamMember";
 import { MemberResponse, Message, TeamState } from "./types";
 
 type StateHandler = (state: TeamState) => Promise<void>;
