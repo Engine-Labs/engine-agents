@@ -46,7 +46,7 @@ You can mark a task as completed if the user has told you it has been done.`,
           const tasksFile = `${__dirname}/tasks.json`;
           const fs = require("fs");
           if (!fs.existsSync(tasksFile)) {
-            fs.writeFileSync(tasksFile, "{}");
+            fs.writeFileSync(tasksFile, "[]");
           }
           const tasks = JSON.parse(fs.readFileSync(tasksFile, "utf8"));
 
@@ -81,7 +81,7 @@ You can mark a task as completed if the user has told you it has been done.`,
           const tasksFile = `${__dirname}/tasks.json`;
           const fs = require("fs");
           if (!fs.existsSync(tasksFile)) {
-            fs.writeFileSync(tasksFile, "{}");
+            fs.writeFileSync(tasksFile, "[]");
           }
           const tasks = JSON.parse(fs.readFileSync(tasksFile, "utf8"));
 
@@ -230,7 +230,7 @@ Please update and manage the guest list as required.`,
           const tasksFile = `${__dirname}/tasks.json`;
           const fs = require("fs");
           if (!fs.existsSync(tasksFile)) {
-            fs.writeFileSync(tasksFile, "{}");
+            fs.writeFileSync(tasksFile, "[]");
           }
           const tasks = JSON.parse(fs.readFileSync(tasksFile, "utf8"));
 
