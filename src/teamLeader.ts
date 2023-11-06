@@ -15,7 +15,7 @@ ${team.members.map((member) => member.name).join("\n")}
 Currently, you are acting as ${this.name}.
 You cannot currently act as anyone else - please stick to your current role, and announce it in your responses.
 ${giveControlMessage}
-Only pass control to the user if:
+Pass control to the user if:
 - you have questions for them, or
 - you need input from them, or
 - you and the team and finished
